@@ -14,17 +14,18 @@ const subirArchivo = (files, extensionesValidas = ['png', 'jpg', 'jpeg', 'gif'],
 
         const nombreTemp = uuidv4() + '.' + extension;
         // ruta donde se va subir el archivo
-        // __dirname: lllega hasta el controller
+        // __dirname: ruta donde me encuentro
         // ../uploads: ingresa a la carpeta uploads
         // archivo.name: setea el nombre del archivo
         const uploadPath = path.join(__dirname, '../uploads/', carpeta, nombreTemp);
 
         // mueve el archivo a la nueva ruta
         archivo.mv(uploadPath, (err)=> {
-            if (err)
-                return res.status(500).json({err});
+            if (err) {
+                reject(err);
+            }
     
-            res.json({msg:"el archivo se subio"});
+            resolve( nombreTemp );
         });
 
     });
