@@ -1,22 +1,56 @@
+
 const { Router } = require('express');
+const { check } = require('express-validator');
+
+const {
+    validarCampos,
+    validarJWT,
+    esAdminRole,
+    tieneRole
+} = require('../middlewares');
+
+
+const { esRoleValido, emailExiste, existeUsuarioPorId } = require('../helpers/db-validators');
 
 const { usuariosGet,
-    usuariosPut,
-    usuariosPost,
-    usuariosDelete,
-    usuariosPatch } = require('../controllers/usuarios');
-
+        usuariosPut,
+        usuariosPost,
+        usuariosDelete,
+        usuariosPatch } = require('../controllers/usuarios');
 
 const router = Router();
 
-
 router.get('/', usuariosGet );
 
-router.put('/:id', usuariosPut );
+router.put('/:id',[
+    check('id', 'No es un ID válido').isMongoId(),
+    check('id').custom( existeUsuarioPorId ),
+    check('rol').custom( esRoleValido ), 
+    validarCampos
+],usuariosPut );
 
-router.post('/', usuariosPost );
+router.post('/',[
+    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+    check('password', 'El password debe de ser más de 6 letras').isLength({ min: 6 }),
+    check('correo', 'El correo no es válido').isEmail(),
+    check('correo').custom( emailExiste ),
+    // check('rol', 'No es un rol válido').isIn(['ADMIN_ROLE','USER_ROLE']),
+    // middleware personalizado a nivel de ruteo
+    check('rol').custom( esRoleValido ), 
+    // guarda todas las validaciones para disparar ocurre algun error
+    validarCampos
+], usuariosPost );
 
-router.delete('/', usuariosDelete );
+router.delete('/:id',[
+    validarJWT,
+    // valida que se ingrese aquellos que solo tienen el rol de admin
+    // esAdminRole,
+    // valida que solo ingresen los siguiente roles: ADMIN_ROLE, VENTAR_ROLE, OTRO_ROLE
+    tieneRole('ADMIN_ROLE', 'VENTAR_ROLE','OTRO_ROLE'),
+    check('id', 'No es un ID válido').isMongoId(),
+    check('id').custom( existeUsuarioPorId ),
+    validarCampos
+],usuariosDelete );
 
 router.patch('/', usuariosPatch );
 
