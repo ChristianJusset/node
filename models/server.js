@@ -5,13 +5,19 @@ const cors = require('cors');
 
 const { dbConnection } = require('../database/config');
 
+const { createServer } = require('http');
+
 //npm i express-fileupload
 const fileUpload = require('express-fileupload');
+const { socketController } = require('../sockets/controller');
 
 class Server {
     constructor() {
         this.app = express();
         this.port = process.env.PORT;
+        this.server = createServer( this.app );
+        this.io     = require('socket.io')(this.server)
+
         this.usuariosPath = '/api/usuarios';
         this.authPath = '/api/auth';
         this.categorias = '/api/categorias';
@@ -27,6 +33,10 @@ class Server {
 
         // Rutas de mi aplicación
         this.routes();
+
+         // Sockets
+         this.sockets();
+
     }
 
     // se va a correr con el config.js, donde se tiene la configuracion con la bd
@@ -78,10 +88,24 @@ class Server {
 
     }
 
+    sockets() {
+        this.io.on('connection', ( socket ) => socketController(socket, this.io ) )
+    }
+
+
     listen() {
-        this.app.listen(this.port, () => {
+        // para trabajar sin sockets
+
+        // this.app.listen(this.port, () => {
+        //     console.log('Servidor corriendo en puerto', this.port);
+        // });
+
+        // para trabajar con sockets
+        this.server.listen(this.port, () => {
             console.log('Servidor corriendo en puerto', this.port);
         });
+
+        
     }
 }
 
